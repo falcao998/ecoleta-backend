@@ -1,9 +1,15 @@
 import express from "express";
 
-const routes = express.Router();
+import PointsController from "./controller/PointsController";
+import ItemsController from "./controller/ItemsController"
 
-routes.get("/", (req , res) => {
-    return res.json({message:"Listagem do Ecolab - Olá mundo"});
-});
+const routes = express.Router();
+const pointsController = new PointsController();
+const itemsController = new ItemsController();
+
+routes.get("/items", itemsController.findAll);
+
+routes.post("/points", pointsController.create);
+routes.get("/points/:id", pointsController.show);
 
 export default routes;
