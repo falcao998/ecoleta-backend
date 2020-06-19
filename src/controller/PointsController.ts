@@ -3,6 +3,26 @@ import {Request, Response} from "express";
 import knex from "../database/connection";
 
 class PointsController {
+
+    async index(req : Request, res : Response) {
+        
+        const {cidade,uf,items} = req.query;
+
+        const parserItems = String(items)
+            .split(",")
+            .map(item => Number(item.trim()));
+
+        const points = await knex("points")
+            .join("point_items","points.id","=","point_items.point_id")
+            .whereIn("point_items.item_id",parserItems)
+            .where("cidade",String(cidade))
+            .where("uf",String(uf))
+            .distinct()
+            .select("points.*");
+
+            return res.json(points);
+    }
+
     async show(req : Request, res : Response){
         const {id} = req.params;
 
@@ -35,10 +55,10 @@ class PointsController {
             items
         } = req.body;
 
-        //const trx = await knex.transaction();
+        const trx = await knex.transaction();
 
         const point = {
-            image: "image-fake",
+            image: "https://images.unsplash.com/photo-1556767576-5ec41e3239ea?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
             name,
             email,
             whatsapp,
@@ -49,7 +69,7 @@ class PointsController {
             uf
         };
 
-        const insertedIds = await knex("points").insert(point);
+        const insertedIds = await trx("points").insert(point);
 
         const point_id  = insertedIds[0];
 
@@ -60,7 +80,9 @@ class PointsController {
             };
         });
 
-        const insertedItemsId = await knex("point_items").insert(pointItems);
+        const insertedItemsId = await trx("point_items").insert(pointItems);
+
+        trx.commit();
 
         return res.json({
             point_id,
